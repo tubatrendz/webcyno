@@ -1,0 +1,98 @@
+# ========================================================
+# Webcyno — API .htaccess
+# URL Rewrite + Security Rules
+# ========================================================
+# এই file-টাই "রিসেপশনিস্ট" — সব request index.php-এ পাঠায়।
+# ========================================================
+
+# --------------------------------------------------------
+# 1. REWRITE ENGINE চালু
+# --------------------------------------------------------
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteBase /api/
+
+    # ----------------------------------------------------
+    # 2. DIRECT FILE/FOLDER ACCESS বন্ধ
+    # ----------------------------------------------------
+    # যদি request আসলেই কোনো file বা folder হয় (যেমন config.php),
+    # সেটা সরাসরি access করতে দেব না — 404 দেখাব।
+    # শুধু index.php ছাড়া।
+    RewriteCond %{REQUEST_FILENAME} -f [OR]
+    RewriteCond %{REQUEST_FILENAME} -d
+    RewriteRule ^(?!index\.php$).*$ - [R=404,L]
+
+    # ----------------------------------------------------
+    # 3. সব request index.php-এ পাঠানো
+    # ----------------------------------------------------
+    # /api/services/list  →  /api/index.php  (route ভিতরে parse হবে)
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^(.*)$ index.php [QSA,L]
+</IfModule>
+
+# --------------------------------------------------------
+# 4. PHP SETTINGS (Performance + Security)
+# --------------------------------------------------------
+<IfModule mod_php.c>
+    php_flag display_errors Off
+    php_flag log_errors On
+    php_value upload_max_filesize 100M
+    php_value post_max_size 105M
+    php_value max_execution_time 120
+    php_value memory_limit 256M
+</IfModule>
+
+# --------------------------------------------------------
+# 5. SECURITY HEADERS
+# --------------------------------------------------------
+<IfModule mod_headers.c>
+    Header set X-Content-Type-Options "nosniff"
+    Header set X-Frame-Options "SAMEORIGIN"
+    Header set X-XSS-Protection "1; mode=block"
+    Header set Referrer-Policy "strict-origin-when-cross-origin"
+</IfModule>
+
+# --------------------------------------------------------
+# 6. SENSITIVE FILES সরাসরি access বন্ধ
+# --------------------------------------------------------
+<FilesMatch "^(config|helpers)\.php$">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order allow,deny
+        Deny from all
+    </IfModule>
+</FilesMatch>
+
+# --------------------------------------------------------
+# 7. .htaccess নিজেই protected
+# --------------------------------------------------------
+<Files ".htaccess">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order allow,deny
+        Deny from all
+    </IfModule>
+</Files>
+
+# --------------------------------------------------------
+# 8. OPTIONS METHOD (CORS Preflight) allow
+# --------------------------------------------------------
+<IfModule mod_rewrite.c>
+    RewriteCond %{REQUEST_METHOD} ^OPTIONS
+    RewriteRule .* - [R=200,L]
+</IfModule>
+
+# --------------------------------------------------------
+# 9. DIRECTORY LISTING বন্ধ
+# --------------------------------------------------------
+Options -Indexes
+
+# --------------------------------------------------------
+# 10. Charset
+# --------------------------------------------------------
+AddDefaultCharset UTF-8

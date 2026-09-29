@@ -1,0 +1,36 @@
+# ============================================================
+# Webcyno — Demos Folder .htaccess
+# Allow PHP execution for uploaded demo sites
+# ============================================================
+
+# Disable directory listing
+Options -Indexes
+
+# Default index
+DirectoryIndex index.html index.htm index.php index.php.txt
+
+# Allow PHP execution (admin-uploaded demos are trusted)
+<IfModule mod_php.c>
+    php_flag engine on
+</IfModule>
+<IfModule mod_php7.c>
+    php_flag engine on
+</IfModule>
+<IfModule mod_php8.c>
+    php_flag engine on
+</IfModule>
+
+# Allow all common website files
+<FilesMatch "\.(html?|css|js|jpg|jpeg|png|gif|svg|webp|ico|woff|woff2|ttf|otf|eot|json|xml|txt|pdf|mp4|webm|php|phtml|php3|php4|php5|php7|phar)$">
+    Require all granted
+</FilesMatch>
+
+# Block only truly dangerous executables
+<FilesMatch "\.(sh|bash|exe|bat|cmd|pl|py|cgi|jsp|asp|aspx)$">
+    Require all denied
+</FilesMatch>
+
+# Prevent access to sensitive files
+<FilesMatch "\.(env|ini|log|sql|bak|old|swp|swo|gitignore)$">
+    Require all denied
+</FilesMatch>

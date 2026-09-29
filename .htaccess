@@ -1,0 +1,156 @@
+# ========================================================
+# Webcyno — Root .htaccess (Fixed Version)
+# Apache 2.4+ / Shared Hosting Compatible
+# ========================================================
+
+# ========================================================
+# 1. DEFAULT CHARSET
+# ========================================================
+AddDefaultCharset UTF-8
+
+# ========================================================
+# 2. DISABLE DIRECTORY LISTING
+# ========================================================
+Options -Indexes
+
+# ========================================================
+# 3. CUSTOM ERROR DOCUMENTS
+# ========================================================
+ErrorDocument 404 /404.php
+
+# ========================================================
+# 4. SECURITY HEADERS
+# ========================================================
+<IfModule mod_headers.c>
+    Header always set X-Content-Type-Options "nosniff"
+    Header always set X-Frame-Options "SAMEORIGIN"
+    Header always set X-XSS-Protection "1; mode=block"
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+    Header always set Permissions-Policy "camera=(), microphone=(), geolocation=()"
+
+    Header unset X-Powered-By
+</IfModule>
+
+# ========================================================
+# 5. BLOCK SENSITIVE FILES
+# (setup.php এখনো allowed — install-এর জন্য দরকার)
+# ========================================================
+<FilesMatch "(^\.|\.(env|ini|log|sql|bak|old|swp|sh)$)">
+    Require all denied
+</FilesMatch>
+
+<FilesMatch "^(composer\.(json|lock)|package(-lock)?\.json|yarn\.lock|README\.md|LICENSE)$">
+    Require all denied
+</FilesMatch>
+
+# ========================================================
+# 6. BLOCK PROTECTED FOLDERS
+# ========================================================
+RedirectMatch 403 ^/includes/.*$
+RedirectMatch 403 ^/database/.*$
+RedirectMatch 403 ^/logs/.*$
+
+# ========================================================
+# 7. URL REWRITES
+# ========================================================
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteBase /
+
+    # ---------- HTTPS redirect (SSL installed হলে uncomment করুন) ----------
+    # RewriteCond %{HTTPS} off
+    # RewriteRule ^(.*)$ https://%{HTTP_HOST}/$1 [R=301,L]
+
+    # ---------- API routing (fallback — api/.htaccess এটাও handle করে) ----------
+    RewriteCond %{REQUEST_URI} ^/api/
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^api/(.*)$ api/index.php [QSA,L]
+
+    # ---------- Friendly URLs ----------
+    RewriteRule ^service/([a-zA-Z0-9\-_]+)/?$ service-details.php?slug=$1 [QSA,L]
+    RewriteRule ^category/([a-zA-Z0-9\-_]+)/?$ category.php?slug=$1 [QSA,L]
+    RewriteRule ^blog/([a-zA-Z0-9\-_]+)/?$ blog-details.php?slug=$1 [QSA,L]
+    RewriteRule ^blog/?$ blog.php [QSA,L]
+
+    # Static pages
+    RewriteRule ^about/?$           about.php           [QSA,L]
+    RewriteRule ^contact/?$         contact.php         [QSA,L]
+    RewriteRule ^faq/?$             faq.php             [QSA,L]
+    RewriteRule ^privacy/?$         privacy-policy.php  [QSA,L]
+    RewriteRule ^terms/?$           terms.php           [QSA,L]
+    RewriteRule ^refund/?$          refund-policy.php   [QSA,L]
+
+    # Auth pages
+    RewriteRule ^login/?$           login.php           [QSA,L]
+    RewriteRule ^register/?$        register.php        [QSA,L]
+    RewriteRule ^logout/?$          logout.php          [QSA,L]
+    RewriteRule ^forgot-password/?$ forgot-password.php [QSA,L]
+    RewriteRule ^reset-password/?$  reset-password.php  [QSA,L]
+    RewriteRule ^verify-email/?$    verify-email.php    [QSA,L]
+
+    # Cart / Checkout
+    RewriteRule ^cart/?$            cart.php            [QSA,L]
+    RewriteRule ^checkout/?$        checkout.php        [QSA,L]
+    RewriteRule ^services/?$        services.php        [QSA,L]
+</IfModule>
+
+# ========================================================
+# 8. PHP SETTINGS (Soft — যদি host support করে)
+# ========================================================
+<IfModule mod_php.c>
+    php_value upload_max_filesize 100M
+    php_value post_max_size       100M
+    php_value max_execution_time  60
+    php_value memory_limit        256M
+</IfModule>
+
+# ========================================================
+# 9. GZIP COMPRESSION
+# ========================================================
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE text/html text/plain text/xml text/css
+    AddOutputFilterByType DEFLATE text/javascript application/javascript
+    AddOutputFilterByType DEFLATE application/json application/xml
+    AddOutputFilterByType DEFLATE image/svg+xml
+</IfModule>
+
+# ========================================================
+# 10. BROWSER CACHING
+# ========================================================
+<IfModule mod_expires.c>
+    ExpiresActive On
+
+    # HTML — no cache (dynamic)
+    ExpiresByType text/html                 "access plus 0 seconds"
+
+    # Images — 1 month
+    ExpiresByType image/jpeg                "access plus 1 month"
+    ExpiresByType image/png                 "access plus 1 month"
+    ExpiresByType image/gif                 "access plus 1 month"
+    ExpiresByType image/webp                "access plus 1 month"
+    ExpiresByType image/svg+xml             "access plus 1 month"
+    ExpiresByType image/x-icon              "access plus 1 year"
+
+    # CSS + JS — 1 month
+    ExpiresByType text/css                  "access plus 1 month"
+    ExpiresByType application/javascript    "access plus 1 month"
+
+    # Fonts — 1 year
+    ExpiresByType font/woff                 "access plus 1 year"
+    ExpiresByType font/woff2                "access plus 1 year"
+
+    # JSON — no cache
+    ExpiresByType application/json          "access plus 0 seconds"
+</IfModule>
+
+# ========================================================
+# 11. PREVENT PHP EXECUTION IN UPLOADS
+# ========================================================
+<IfModule mod_rewrite.c>
+    RewriteRule ^assets/uploads/.*\.(php|phtml|php3|php4|php5|phar|pl|py|jsp|asp|sh|cgi)$ - [F,L]
+</IfModule>
+
+# ========================================================
+# 12. END
+# ========================================================
